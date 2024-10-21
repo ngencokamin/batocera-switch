@@ -1,4 +1,8 @@
 # batocera-switch
+## THIS CODE IS BEING ARCHIVED - NO NEW WORK
+Due to all the changes in the Switch emulation world, and a lack of time, I have made the decision to archive this project.  It will still be available for people to see or someone to fork, but alas, its time has come.  
+
+## General
 Extends Batocera and adds switch emulation as an UNSUPPORTED ADD-ON to BATOCERA.  
 
 Master branch is tested and currently working on Batocera 37-38. If you have v35 or lower, please upgrade Batocera as we are no longer supporting these versions.
