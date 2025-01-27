@@ -9,7 +9,6 @@ import stat
 import json
 import uuid
 from os import path
-from os import environ
 import controllersConfig as controllersConfig
 from shutil import copyfile
 from utils.logger import get_logger
