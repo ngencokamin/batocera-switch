@@ -1,6 +1,9 @@
 # batocera-switch
-## THIS CODE IS BEING ARCHIVED - NO NEW WORK
-Due to all the changes in the Switch emulation world, and a lack of time, I have made the decision to archive this project.  It will still be available for people to see or someone to fork, but alas, its time has come.  
+## IMPORTANT NOTES
+1. This script worked as-is up to Batocera 40, but broke in Batocera 41 due to changes in Batocera's Python path-handling and how imports work in the new version of Python that Batocera 41 uses. The main purpose of this fork is *specifically* to get batocera-switch working again on 41. I can't promise anything beyond that point.
+2. Now that Batocera Pro is officially down + official downloads for Yuzu and Ryujinx have been removed, the easy install script no longer functions. I will be working on a new one after I have gotten this repository working on version 41.
+3. Due to not wanting Nintendo to pile-driver me into dust with the force of 10,000 suns, you will have to provide your own copies of the Yuzu and/or Ryujinx binaries. Please do not ask me for them, or ask me where to find them. I believe in you.
+4. This is ***only*** for x86_64 builds of Batocera.
 
 ## General
 Extends Batocera and adds switch emulation as an UNSUPPORTED ADD-ON to BATOCERA.  
@@ -13,8 +16,8 @@ This version integrates work from foclabroc, Batocera Nation, and uureel.  It do
 
 Controller automapping is a constant work in progress.  Autoconfiguration of controllers is now handled via [pySDL](https://github.com/py-sdl/py-sdl2) and some python magic.
 
-## GET Support Here
-https://discord.gg/cuw5Xt7M7d
+## Support
+Feel free to open a GitHub issue if you need support, and I will do my best to help out.
 
 ## TODO
 - [ ] Update README
