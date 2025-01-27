@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import batoceraPaths
 import generators
 from configgen.generators.Generator import Generator
 import Command as Command
@@ -9,7 +10,6 @@ import json
 import uuid
 from os import path
 from os import environ
-import batoceraFiles as batoceraFiles
 import controllersConfig as controllersConfig
 from shutil import copyfile
 from utils.logger import get_logger
@@ -32,13 +32,13 @@ class RyujinxMainlineGenerator(Generator):
             st = os.stat("/userdata/system/switch/Ryujinx-LDN.AppImage")
             os.chmod("/userdata/system/switch/Ryujinx-LDN.AppImage", st.st_mode | stat.S_IEXEC)  
 
-        if not path.isdir(batoceraFiles.CONF + "/Ryujinx"):
-            os.mkdir(batoceraFiles.CONF + "/Ryujinx")
-        if not path.isdir(batoceraFiles.CONF + "/Ryujinx/system"):
-            os.mkdir(batoceraFiles.CONF + "/Ryujinx/system")
+        if not path.isdir(path.join(batoceraPaths.CONFIGS, "Ryujinx")):
+            os.mkdir(path.join(batoceraPaths.CONFIGS, "Ryujinx"))
+        if not path.isdir(path.join(batoceraPaths.CONFIGS, "Ryujinx/system")):
+            os.mkdir(path.join(batoceraPaths.CONFIGS, "Ryujinx/system"))
 
-        RyujinxConfig = batoceraFiles.CONF + '/Ryujinx/Config.json'
-        RyujinxHome = batoceraFiles.CONF
+        RyujinxConfig = path.join(batoceraPaths.CONFIGS, "Ryujinx/Config.json")
+        RyujinxHome = batoceraPaths.CONFIGS
 
         firstrun = True
         if path.exists(RyujinxConfig):
@@ -66,7 +66,7 @@ class RyujinxMainlineGenerator(Generator):
         #, "SDL_GAMECONTROLLERCONFIG": controllersConfig.generateSdlGameControllerConfig(playersControllers)
         return Command.Command(
             array=commandArray,
-            env={"XDG_CONFIG_HOME":RyujinxHome, "XDG_CACHE_HOME":batoceraFiles.CACHE, "QT_QPA_PLATFORM":"xcb", "SDL_GAMECONTROLLERCONFIG": controllersConfig.generateSdlGameControllerConfig(playersControllers)}
+            env={"XDG_CONFIG_HOME":RyujinxHome, "XDG_CACHE_HOME":batoceraPaths.CACHE, "QT_QPA_PLATFORM":"xcb", "SDL_GAMECONTROLLERCONFIG": controllersConfig.generateSdlGameControllerConfig(playersControllers)}
             )
 
     def writeRyujinxConfig(RyujinxConfigFile, system, playersControllers):
@@ -705,7 +705,7 @@ class RyujinxMainlineGenerator(Generator):
         # It's problematic in case of hybrid laptop as it may always default to the igpu instead of the dgpu
         # data['preferred_gpu'] = ""
 
-        with open(batoceraFiles.CONF + '/Ryujinx/BeforeRyu.json', "w") as outfile:
+        with open(path.join(batoceraPaths.CONFIGS, "Ryujinx/BeforeRyu.json"), "w") as outfile:
             outfile.write(json.dumps(data, indent=2))
 
         with open(RyujinxConfigFile, "w") as outfile:
