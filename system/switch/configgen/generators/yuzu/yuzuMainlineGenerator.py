@@ -6,7 +6,7 @@ import Command as Command
 import os
 import shutil
 import stat
-import batoceraFiles as batoceraFiles
+import batoceraPaths
 import controllersConfig as controllersConfig
 import configparser
 from shutil import copyfile
@@ -33,15 +33,15 @@ class YuzuMainlineGenerator(Generator):
             st = os.symlink("/lib/libthai.so.0.3.1","/lib/libthai.so.0")
 
         #Create Keys Folder
-        if not os.path.exists(batoceraFiles.CONF + "/yuzu"):
-            os.mkdir(batoceraFiles.CONF + "/yuzu")
+        if not os.path.exists(os.path.join(batoceraPaths.CONFIG, "yuzu")):
+            os.mkdir(os.path.join(batoceraPaths.CONFIG, "yuzu"))
 
-        if not os.path.exists(batoceraFiles.CONF + "/yuzu/keys"):
-            os.mkdir(batoceraFiles.CONF + "/yuzu/keys")
+        if not os.path.exists(os.path.join(batoceraPaths.CONFIG, "yuzu/keys")):
+            os.mkdir(os.path.join(batoceraPaths.CONFIG, "yuzu/keys"))
 
         #Create OS Saves folder
-        if not os.path.exists(batoceraFiles.SAVES + "/yuzu"):
-            os.mkdir(batoceraFiles.SAVES + "/yuzu")        
+        if not os.path.exists(os.path.join(batoceraPaths.SAVES, "yuzu")):
+            os.mkdir(os.path.join(batoceraPaths.SAVES, "yuzu"))        
 
         #Link Yuzu App Directory to /system/configs/yuzu
         if not os.path.exists("/userdata/system/.local"):
@@ -85,8 +85,8 @@ class YuzuMainlineGenerator(Generator):
         if not os.path.exists("/userdata/system/.cache/yuzu/game_list"):
             st = os.symlink("/userdata/saves/yuzu","/userdata/system/.cache/yuzu/game_list")
 
-        yuzuConfig = batoceraFiles.CONF + '/yuzu/qt-config.ini'
-        beforeyuzuConfig = batoceraFiles.CONF + '/yuzu/before-qt-config.ini'
+        yuzuConfig = batoceraPaths.CONFIG + '/yuzu/qt-config.ini'
+        beforeyuzuConfig = batoceraPaths.CONFIG + '/yuzu/before-qt-config.ini'
         
         YuzuMainlineGenerator.writeYuzuConfig(yuzuConfig,beforeyuzuConfig, system, playersControllers)
         if system.config['emulator'] == 'yuzu-early-access':
