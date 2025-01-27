@@ -5,7 +5,7 @@ Due to all the changes in the Switch emulation world, and a lack of time, I have
 ## General
 Extends Batocera and adds switch emulation as an UNSUPPORTED ADD-ON to BATOCERA.  
 
-Master branch is tested and currently working on Batocera 37-38. If you have v35 or lower, please upgrade Batocera as we are no longer supporting these versions.
+Master branch is tested and currently working on Batocera 37-40. If you have v35 or lower, please upgrade Batocera as we are no longer supporting these versions.
 
 This version of the code requires a file system for userdata that supports symlinking (EXT4, BTRFS) and is for x86_64 only!!  
 
@@ -17,9 +17,13 @@ Controller automapping is a constant work in progress.  Autoconfiguration of con
 https://discord.gg/cuw5Xt7M7d
 
 ## TODO
-Actual Joycon support for Ryujinx (May not be possible) - Crash when joycons connected is fixed
-Turn off/on rumble based on SDL support for the feature (currently just 'on')
-Turn off/on motion based on SDL support for the feature (currently just 'on')
+- [ ] Update README
+
+- [ ] Add support for Batocera 41
+  - [ ] Update to use `batoceraPaths` not that `batoceraFiles` has been fully removed
+  - [ ] Update imports to not break with new Python version
+- [ ] Update/create new easy install method now that Batocera Pro is deprecated
+- [ ] Require user provide their own emulator binaries so Nintendo doesn't nuke me into oblivion
 
 ## EASY INSTALL
 From a terminal window, run the following:<br>
@@ -42,5 +46,4 @@ Feel free to send anything or nothing to my [Paypal](https://www.paypal.com/payp
 
 ## UPDATE 2023-06-28
 Controller auto configuration has been migrated to the same versions of SDL that yuzu and ryujinx are using, utilizing the [pySDL project](https://github.com/py-sdl/py-sdl2).
-
 
