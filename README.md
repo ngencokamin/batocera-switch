@@ -14,13 +14,13 @@ This version of the code requires a file system for userdata that supports symli
 
 This version integrates work from foclabroc, Batocera Nation, and uureel.  It does not include the bios keys.  
 
-Controller automapping is a constant work in progress.  Autoconfiguration of controllers is now handled via [pySDL](https://github.com/py-sdl/py-sdl2) and some python magic.
+Autoconfiguration of controllers is now handled via [pySDL](https://github.com/py-sdl/py-sdl2) and some python magic.
 
 ## Support
-Feel free to open a GitHub issue if you need support, and I will do my best to help out.
+Feel free to open a GitHub issue if you need support and I will do my best to help out.
 
 ## TODO
-- [ ] Update README
+- [x] Update README
 
 - [ ] Add support for Batocera 41
   - [ ] Update to use `batoceraPaths` not that `batoceraFiles` has been fully removed
@@ -29,23 +29,34 @@ Feel free to open a GitHub issue if you need support, and I will do my best to h
 - [ ] Require user provide their own emulator binaries so Nintendo doesn't nuke me into oblivion
 
 ## EASY INSTALL
-From a terminal window, run the following:<br>
-```curl -L switch.batocera.pro | bash```
 
-After installing, place your prod.keys and title.keys in /share/bios/switch/  
-If you wish to use Ryujinx you will also need to supply the firmware zip file
+#### No easy install method for right now, will work on it next
+
+~~From a terminal window, run the following:<br>~~
+~~```curl -L switch.batocera.pro | bash```~~
+
+~~After installing, place your prod.keys and title.keys in /share/bios/switch/  
+If you wish to use Ryujinx you will also need to supply the firmware zip file~~~
+
+
 
 ## UPGRADING OLDER VERSIONS OF THIS ADD-ON NOT INSTALLED WITH THE EASY INSTALL METHOD
-Delete the \system\switch folder and install this repo as normal.  There are folders in the old install that will break this version.  
+Delete the `/userdata/system/switch` folder and install this repo as normal.  There are folders in the old install that will break this version.  
 
 ## REPORTING ISSUES
-Please use the controller issue templates for reporting controller issues.  For other issues, provide as much information as possible, and if it's a launch issue, please be sure to include the es_launch_stdout.log and es_launch_stderr.log log files from \system\logs
+Please use the controller issue templates for reporting controller issues.  For other issues, provide as much information as possible, and if it's a launch issue, please be sure to include the full outputs of the `/userdata/system/logs/es_launch_stdout.log` and `/userdata/system/logs/es_launch_stderr.log` log files. Also, please note that I am not the original author of this code, so my help will be slightly more limited for issues outside of porting it to work with Batocera 41.
 
 ## SPECIAL THANKS
-Special thanks for foclabroc, Rion, and Darknior and multiple members of the [Batocera Nation Discord](https://discord.gg/cuw5Xt7M7d) for testing things especially with the migration to SDL, [RGS] for a controller donation, and anyone else who contributes and helps me make this better. 
+Huge thanks to [ordovis](https://github.com/ordovice) for creating the original repository. They did all the hard work.
 
-## HELP ME BUY CONTROLLERS OR A BEER
-Feel free to send anything or nothing to my [Paypal](https://www.paypal.com/paypalme/ordovice)
+Additionally, I don't want to remove any other credits, so from the original README:
+
+> Special thanks for foclabroc, Rion, and Darknior and multiple members of the [Batocera Nation Discord](https://discord.gg/cuw5Xt7M7d) for testing things especially with the migration to SDL, [RGS] for a controller donation, and anyone else who contributes and helps me make this better. 
+
+## HOW TO SHOW APPRECIATION
+Feel free to [buy me a coffee](https://buymeacoffee.com/ngencokamin), shoot me a message via email or on matrix (@radioambush:beeper.com), or just by playing a game you love and enjoying it.
+
+Additionally, if you want to support the person who did all the work *besides* making it work on Batocera 41, I am including a link to [ordovis' Paypal](https://www.paypal.com/paypalme/ordovice) as well.
 
 ## UPDATE 2023-06-28
 Controller auto configuration has been migrated to the same versions of SDL that yuzu and ryujinx are using, utilizing the [pySDL project](https://github.com/py-sdl/py-sdl2).
