@@ -22,10 +22,11 @@ Feel free to open a GitHub issue if you need support and I will do my best to he
 ## TODO
 - [x] Update README
 
-- [ ] Add support for Batocera 41
-  - [ ] Update to use `batoceraPaths` not that `batoceraFiles` has been fully removed
-  - [ ] Update imports to not break with new Python version
-- [ ] Update/create new easy install method now that Batocera Pro is deprecated
+- [x ] Add support for Batocera 41
+  - [ x ] Update to use `batoceraPaths` not that `batoceraFiles` has been fully removed
+  - [ x ] Update imports to not break with new Python version
+  - [ ] Make sure I didn't break older versions
+- [ x ] Update/create new easy install method now that Batocera Pro is deprecated
 - [ ] Require user provide their own emulator binaries so Nintendo doesn't nuke me into oblivion
 
 ## EASY INSTALL
