@@ -33,16 +33,16 @@ import signal
 import time
 from sys import exit
 import subprocess
-import batoceraFiles
-import utils.videoMode as videoMode
+import configgen.batoceraPaths
+import configgen.utils.videoMode as videoMode
 ############################
-from utils.logger import get_logger
-eslog = get_logger(__name__)
+import logging
+eslog = logging.getLogger(__name__)
 ############################
 
-from Emulator import Emulator
-import controllersConfig as controllers
-import utils.bezels as bezelsUtil
+from configgen.Emulator import Emulator
+import configgen.ontrollersConfig as controllers
+import configgen.utils.bezels as bezelsUtil
 
 def get_batocera_version():
     batocera_version_path = '/usr/bin/batocera-version'
@@ -210,7 +210,7 @@ def start_rom(args, maxnbplayers, rom, romConfiguration):
         eslog.debug("resolution: {}x{}".format(str(gameResolution["width"]), str(gameResolution["height"])))
 
         # savedir: create the save directory if not already done
-        dirname = os.path.join(batoceraFiles.savesDir, system.name)
+        dirname = os.path.join(batoceraPaths.SAVES, system.name)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
