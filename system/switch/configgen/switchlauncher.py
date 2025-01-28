@@ -41,7 +41,7 @@ eslog = logging.getLogger(__name__)
 ############################
 
 from configgen.Emulator import Emulator
-import configgen.ontrollersConfig as controllers
+import configgen.controllersConfig as controllers
 import configgen.utils.bezels as bezelsUtil
 
 def get_batocera_version():
