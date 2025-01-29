@@ -2,19 +2,12 @@
 
 # Code is emulatorlauncher.py from Batocera 35 with minor changes to generator importer
 # Added for Switch Add-On
-from configgen.utils.logger import setup_logging
-from configgen.utils.hotkeygen import set_hotkeygen_context
-from configgen.utils import bezels as bezelsUtil, gunsUtils, videoMode, wheelsUtils
-import configgen.controllersConfig as controllers
-from configgen.controller import Controller
-from configgen.Emulator import Emulator
+
 from typing import TYPE_CHECKING
 from pathlib import Path
 import json
 import logging
-import configgen.batoceraPaths
 import subprocess
-from sys import exit
 import time
 import signal
 import GeneratorImporter
@@ -22,12 +15,23 @@ import argparse
 import platform
 from packaging import version
 
-if version.parse(platform.release()) < version.parse("6.1.18"):
-    import sys
-    sys.path.append('/usr/lib/python3.10/site-packages/configgen/')
-else:
-    import sys
-    sys.path.append('/usr/lib/python3.11/site-packages/configgen/')
+# if version.parse(platform.release()) < version.parse("6.1.18"):
+#     import sys
+#     sys.path.append('/usr/lib/python3.10/site-packages/configgen/')
+# else:
+import sys
+from sys import exit
+sys.path.append('/usr/lib/python3.11/site-packages/configgen/')
+
+import configgen.batoceraPaths as batoceraPaths
+from configgen.utils.logger import setup_logging
+from configgen.utils.hotkeygen import set_hotkeygen_context
+from configgen.utils import bezels as bezelsUtil, gunsUtils, videoMode, wheelsUtils
+import configgen.controllersConfig as controllers
+from configgen.controller import Controller
+from configgen.Emulator import Emulator
+
+from batoceraPaths import SAVES, SYSTEM_SCRIPTS, USER_SCRIPTS
 
 import os
 _profiler = None
@@ -246,7 +250,7 @@ def start_rom(args: argparse.Namespace, maxnbplayers: int, rom: str, romConfigur
             # cmd = generator.generate(system, rom, playersControllers, guns, gameResolution)
             # Switch
             cmd = generator.generate(
-                system, rom, playersControllers, gameResolution)
+                system, rom, player_controllers, gameResolution)
 
             # if system.isOptSet('hud_support') and system.getOptBoolean('hud_support') == True:
             hud_bezel = getHudBezel(system, generator, rom, gameResolution, controllers.gunsBordersSizeName(
