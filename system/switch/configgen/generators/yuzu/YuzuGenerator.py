@@ -32,7 +32,7 @@ from ...sdl2.sdlgfx import ellipseColor
 
 
 from . import yuzuControllers
-from .yuzuPaths import YUZU_CONFIG, YUZU_CONTROLLER_PROFILES, YUZU_FIRMWARE, YUZU_KEYS, YUZU_ROMDIR, YUZU_SAVES, YUZU_APPIMAGE, YUZU_EA_APPIMAGE
+from .yuzuPaths import YUZU_CONFIG, YUZU_FIRMWARE, YUZU_KEYS, YUZU_ROMDIR, YUZU_SAVES, YUZU_APPIMAGE, YUZU_EA_APPIMAGE
 
 if TYPE_CHECKING:
     from configgen.Emulator import Emulator
@@ -66,7 +66,7 @@ class YuzuGenerator(Generator):
         YuzuGenerator.YuzuConfig(YUZU_CONFIG / "qt-config.ini", system)
 
         # Set-up the controllers
-        yuzuControllers.generateControllerConfig(system, playersControllers)
+        yuzuControllers.generateControllerConfig(system, playersControllers, YUZU_CONFIG / "qt-config.ini")
 
         # Set executable to launch from ES emulator config
         if emulator == 'yuzu-early-access':
@@ -366,26 +366,7 @@ class YuzuGenerator(Generator):
         else:
             yuzu_config.set("System", "use_docked_mode", "1")
             yuzu_config.set("System", "use_docked_mode\\default", "true")
-        
-        
-        # Controls Section
-        ## Placeholder
-        ## Rumble
-        if system.isOptSet("yuzu_enable_rumble"):
-                yuzu_config.set("Controls", "vibration_enabled", system.config["yuzu_enable_rumble"])
-                yuzu_config.set("Controls", "vibration_enabled\\default", system.config["yuzu_enable_rumble"])
-        else:
-            yuzu_config.set("Controls", "vibration_enabled", "true")
-            yuzu_config.set("Controls", "vibration_enabled\\default", "true")
-            
-        ## Controller Applet
-        ### Enabled breaks multiplayer games like Mario Kart for some Yuzu versions
-        if system.isOptSet("yuzu_controller_applet"):
-                yuzu_config.set("LibraryApplet", "controller_applet_mode", system.config["yuzu_controller_applet"])
-                yuzu_config.set("LibraryApplet", "controller_applet_mode\\default", system.config["yuzu_controller_applet"])
-        else:
-            yuzu_config.set("LibraryApplet", "controller_applet_mode", "false")
-            yuzu_config.set("LibraryApplet", "controller_applet_mode\\default", "false")
+    
         
         # telemetry section
         if not yuzu_config.has_section("WebService"):
@@ -409,7 +390,6 @@ class YuzuGenerator(Generator):
 
     def setup_directories():
         mkdir_if_not_exists(YUZU_CONFIG)
-        mkdir_if_not_exists(YUZU_CONTROLLER_PROFILES)
         # TODO
         # Figure out yuzu save handling and make symlink to YUZU_SAVES dir
         # mkdir_if_not_exists(YUZU_SAVES)

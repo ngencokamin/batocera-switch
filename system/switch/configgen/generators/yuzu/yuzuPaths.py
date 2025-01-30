@@ -12,4 +12,3 @@ YUZU_KEYS: Final = BIOS / 'switch'
 YUZU_FIRMWARE: Final = BIOS / 'switch' / 'firmware'
 YUZU_APPIMAGE: Final = Path('/userdata/system/switch/yuzu.AppImage')
 YUZU_EA_APPIMAGE: Final = Path('/userdata/system/switch/yuzuEA.AppImage')
-YUZU_CONTROLLER_PROFILES: Final = CONFIGS / 'yuzu' / 'controllerProfiles'
