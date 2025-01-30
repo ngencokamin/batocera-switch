@@ -114,6 +114,8 @@ class YuzuGenerator(Generator):
 
         yuzu_config.set("UI", "calloutFlags", "1")
         yuzu_config.set("UI", "calloutFlags\\default", "false")
+        yuzu_config.set("UI", "confirmStop", "2")
+        yuzu_config.set("UI", "confirmStop\\default", "false")
 
         # Single Window Mode
         if system.isOptSet('single_window'):
