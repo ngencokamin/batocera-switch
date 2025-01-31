@@ -22,7 +22,7 @@ eslog = logging.getLogger(__name__)
 def generateControllerConfig(system: Emulator, playersControllers: ControllerMapping, yuzu_config_file):
 
     # pads
-    os.environ["PYSDL2_DLL_PATH"] = "/userdata/system/switch/extra/sdl/dll"
+    os.environ["PYSDL2_DLL_PATH"] = "/userdata/system/switch/extra/sdl/"
 
     # Define buttons and axis
     yuzuButtons = {
@@ -452,11 +452,11 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
 
                         #Configure buttons and triggers
                         for x in yuzuButtons:
-                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
                             yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                         for x in yuzuAxis:
-                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber, 1)))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber, 1)))
                             yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
 
@@ -494,11 +494,11 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
 
                         #Configure buttons and triggers
                         for x in yuzuButtons:
-                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
                             yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                         for x in yuzuAxis:
-                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber,2)))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber,2)))
                             yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                     else:
@@ -534,12 +534,12 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
 
                         #Configure buttons and triggers
                         for x in yuzuButtons:
-                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
                     
                             yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")                           
 
                         for x in yuzuAxis:
-                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber,0)))     
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber,0)))     
                             yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                     #Enable motion no matter what, as enabling won't hurt things if it doesn't exist
@@ -1170,3 +1170,75 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
     with open(yuzu_config_file, 'w') as configfile:
         eslog.debug("Writing controls to config")
         yuzu_config.write(configfile)
+
+@staticmethod
+def setButton(key, padGuid, padInputs,controllernumber):
+
+    # it would be better to pass the joystick num instead of the guid because 2 joysticks may have the same guid
+    if key in padInputs:
+        input = padInputs[key]
+        #eslog.debug("Mapping: {}".format(input))
+
+        if input.type == "button":
+            return ("button:{},guid:{},port:{},engine:sdl").format(input.id, padGuid, controllernumber)
+        elif input.type == "hat":
+            return ("hat:{},direction:{},guid:{},port:{},engine:sdl").format(input.id, hatdirectionvalue(input.value), padGuid, controllernumber)
+        elif input.type == 'axis':
+            return ("threshold:0.500000,axis:{},pad:0,port:{},guid:{},engine:sdl").format(input.id, controllernumber, padGuid)
+
+@staticmethod
+def setAxis(key, padGuid, padInputs,controllernumber, axisReversed):
+    inputx = -1
+    inputy = -1
+
+    if key == "joystick1":
+        try:
+            inputx = padInputs["joystick1left"]
+        except:
+            inputx = ["0"]
+    elif key == "joystick2":
+        try:
+            inputx = padInputs["joystick2left"]
+        except:
+            inputx = ["0"]
+
+    if key == "joystick1":
+        try:
+            inputy = padInputs["joystick1up"]
+        except:
+            inputy = ["0"]
+    elif key == "joystick2":
+        try:
+            inputy = padInputs["joystick2up"]
+        except:
+            inputy = ["0"]
+
+    if(axisReversed == 1):
+        #Left Joycon
+        try:
+            return ("engine:sdl,port:{},guid:{},axis_x:{},offset_x:-0.011750,axis_y:{},offset_y:-0.027467,invert_x:-,invert_y:+,deadzone:0.150000,range:0.950000").format(controllernumber, padGuid, inputy.id, inputx.id)
+        except:
+            return ("0")
+    if(axisReversed == 2):
+        #Right Joycon
+        try:
+            return ("engine:sdl,port:{},guid:{},axis_x:{},offset_x:-0.011750,axis_y:{},offset_y:-0.027467,invert_x:+,invert_y:1,deadzone:0.150000,range:0.950000").format(controllernumber, padGuid, inputy.id, inputx.id)
+        except:
+            return ("0")
+    else:
+        try:
+            return ("engine:sdl,port:{},guid:{},axis_x:{},offset_x:-0.011750,axis_y:{},offset_y:-0.027467,invert_x:+,invert_y:+,deadzone:0.150000,range:0.950000").format(controllernumber, padGuid, inputx.id, inputy.id)
+        except:
+            return ("0")
+
+@staticmethod
+def hatdirectionvalue(value):
+    if int(value) == 1:
+        return "up"
+    if int(value) == 4:
+        return "down"
+    if int(value) == 2:
+        return "right"
+    if int(value) == 8:
+        return "left"
+    return "unknown"
