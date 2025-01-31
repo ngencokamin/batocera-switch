@@ -3,6 +3,19 @@
 # Code is emulatorlauncher.py from Batocera 35 with minor changes to generator importer
 # Added for Switch Add-On
 
+from configgen.types import DeviceInfoDict, GunDict, Resolution
+from configgen.Command import Command
+from generators.Generator import Generator
+from collections.abc import Iterable, Mapping
+import os
+from batoceraPaths import SAVES, SYSTEM_SCRIPTS, USER_SCRIPTS
+from configgen.Emulator import Emulator
+from configgen.controller import Controller
+import configgen.controllersConfig as controllers
+from configgen.utils import bezels as bezelsUtil, gunsUtils, videoMode, wheelsUtils
+from configgen.utils.hotkeygen import set_hotkeygen_context
+from configgen.utils.logger import setup_logging
+import configgen.batoceraPaths as batoceraPaths
 from typing import TYPE_CHECKING
 from pathlib import Path
 import json
@@ -23,17 +36,7 @@ import sys
 from sys import exit
 sys.path.append('/usr/lib/python3.11/site-packages/configgen/')
 
-import configgen.batoceraPaths as batoceraPaths
-from configgen.utils.logger import setup_logging
-from configgen.utils.hotkeygen import set_hotkeygen_context
-from configgen.utils import bezels as bezelsUtil, gunsUtils, videoMode, wheelsUtils
-import configgen.controllersConfig as controllers
-from configgen.controller import Controller
-from configgen.Emulator import Emulator
 
-from batoceraPaths import SAVES, SYSTEM_SCRIPTS, USER_SCRIPTS
-
-import os
 _profiler = None
 
 # 1) touch /var/run/emulatorlauncher.perf
@@ -50,11 +53,6 @@ if os.path.exists("/var/run/emulatorlauncher.perf"):
 ### import always needed ###
 # import configgen.utils.videoMode as videoMode
 ############################
-
-from collections.abc import Iterable, Mapping
-from generators.Generator import Generator
-from configgen.Command import Command
-from configgen.types import DeviceInfoDict, GunDict, Resolution
 
 
 eslog = logging.getLogger(__name__)
@@ -299,7 +297,8 @@ def start_rom(args: argparse.Namespace, maxnbplayers: int, rom: str, romConfigur
 
 def getHudBezel(system: Emulator, generator: Generator, rom: str, gameResolution: Resolution, bordersSize: str | None, bordersRatio: str | None):
     if generator.supportsInternalBezels():
-        eslog.debug(f"skipping bezels for emulator {system.config['emulator']}")
+        eslog.debug(f"skipping bezels for emulator {
+                    system.config['emulator']}")
         return None
     # no good reason for a bezel
     if ('bezel' not in system.config or system.config['bezel'] == "" or system.config['bezel'] == "none") and not (system.isOptSet('bezel.tattoo') and system.config['bezel.tattoo'] != "0") and bordersSize is None:
@@ -314,9 +313,11 @@ def getHudBezel(system: Emulator, generator: Generator, rom: str, gameResolution
         w = gameResolution["width"]
         h = gameResolution["height"]
         with overlay_info_file.open("w") as fd:
-            fd.write(f'{{ "width":{w}, "height":{h}, "opacity":1.0000000, "messagex":0.220000, "messagey":0.120000 }}')
+            fd.write(f'{{ "width":{w}, "height":{
+                     h}, "opacity":1.0000000, "messagex":0.220000, "messagey":0.120000 }}')
     else:
-        eslog.debug(f"hud enabled. trying to apply the bezel {system.config['bezel']}")
+        eslog.debug(f"hud enabled. trying to apply the bezel {
+                    system.config['bezel']}")
 
         bezel = "none"
         bz_infos = bezelsUtil.getBezelInfos(
@@ -359,17 +360,20 @@ def getHudBezel(system: Emulator, generator: Generator, rom: str, gameResolution
     # the screen and bezel ratio must be approximatly the same
     if bordersSize is None:
         if abs(screen_ratio - bezel_ratio) > max_ratio_delta:
-            eslog.debug(f"screen ratio ({screen_ratio}) is too far from the bezel one ({bezel_ratio}) : {screen_ratio} - {bezel_ratio} > {max_ratio_delta}")
+            eslog.debug(f"screen ratio ({screen_ratio}) is too far from the bezel one ({
+                        bezel_ratio}) : {screen_ratio} - {bezel_ratio} > {max_ratio_delta}")
             return None
 
     # the ingame image and the bezel free space must feet
     # the bezel top and bottom cover must be minimum
     if bordersSize is None:
         if "top" in infos and infos["top"] / bezel_height > max_cover:
-            eslog.debug(f'bezel top covers too much the game image : {infos["top"]} / {bezel_height} > {max_cover}')
+            eslog.debug(f'bezel top covers too much the game image : {
+                        infos["top"]} / {bezel_height} > {max_cover}')
             return None
         if "bottom" in infos and infos["bottom"] / bezel_height > max_cover:
-            eslog.debug(f'bezel bottom covers too much the game image : {infos["bottom"]} / {bezel_height} > {max_cover}')
+            eslog.debug(f'bezel bottom covers too much the game image : {
+                        infos["bottom"]} / {bezel_height} > {max_cover}')
             return None
 
     # if there is no information about top/bottom, assume default is 0
@@ -384,8 +388,9 @@ def getHudBezel(system: Emulator, generator: Generator, rom: str, gameResolution
         # assume default is 4/3 over 16/9
         infos_left = (bezel_width - (bezel_height / 3 * 4)) / 2
         if bordersSize is None:
-            if abs((infos_left  - ((bezel_width-img_width)/2.0)) / img_width) > max_cover:
-                eslog.debug(f"bezel left covers too much the game image : {infos_left  - ((bezel_width-img_width)/2.0)} / {img_width} > {max_cover}")
+            if abs((infos_left - ((bezel_width-img_width)/2.0)) / img_width) > max_cover:
+                eslog.debug(f"bezel left covers too much the game image : {
+                            infos_left - ((bezel_width-img_width)/2.0)} / {img_width} > {max_cover}")
                 return None
 
     if "right" not in infos:
@@ -394,15 +399,18 @@ def getHudBezel(system: Emulator, generator: Generator, rom: str, gameResolution
         infos_right = (bezel_width - (bezel_height / 3 * 4)) / 2
         if bordersSize is None:
             if abs((infos_right - ((bezel_width-img_width)/2.0)) / img_width) > max_cover:
-                eslog.debug(f"bezel right covers too much the game image : {infos_right  - ((bezel_width-img_width)/2.0)} / {img_width} > {max_cover}")
+                eslog.debug(f"bezel right covers too much the game image : {
+                            infos_right - ((bezel_width-img_width)/2.0)} / {img_width} > {max_cover}")
                 return None
 
     if bordersSize is None:
-        if "left"  in infos and abs((infos["left"]  - ((bezel_width-img_width)/2.0)) / img_width) > max_cover:
-            eslog.debug("bezel left covers too much the game image : {} / {} > {}".format(infos["left"]  - ((bezel_width-img_width)/2.0), img_width, max_cover))
+        if "left" in infos and abs((infos["left"] - ((bezel_width-img_width)/2.0)) / img_width) > max_cover:
+            eslog.debug("bezel left covers too much the game image : {} / {} > {}".format(
+                infos["left"] - ((bezel_width-img_width)/2.0), img_width, max_cover))
             return None
         if "right" in infos and abs((infos["right"] - ((bezel_width-img_width)/2.0)) / img_width) > max_cover:
-            eslog.debug("bezel right covers too much the game image : {} / {} > {}".format(infos["right"]  - ((bezel_width-img_width)/2.0), img_width, max_cover))
+            eslog.debug("bezel right covers too much the game image : {} / {} > {}".format(
+                infos["right"] - ((bezel_width-img_width)/2.0), img_width, max_cover))
             return None
             return None
 
@@ -471,7 +479,8 @@ def callExternalScripts(folder: Path, event: str, args: Iterable[str | Path]) ->
             callExternalScripts(file, event, args)
         else:
             if os.access(file, os.X_OK):
-                eslog.debug(f"calling external script: {[file, event, *args]!s}")
+                eslog.debug(f"calling external script: {
+                            [file, event, *args]!s}")
                 subprocess.call([file, event, *args])
 
 
@@ -485,7 +494,8 @@ def getHudConfig(system: Emulator, systemName: str, emulator: str, core: str, ro
     configstr = ""
 
     if bezel != "" and bezel != "none" and bezel is not None:
-        configstr = f"background_image={hudConfig_protectStr(bezel)}\nlegacy_layout=false\n"
+        configstr = f"background_image={
+            hudConfig_protectStr(bezel)}\nlegacy_layout=false\n"
 
     if not system.isOptSet('hud') or system.config['hud'] == "none":
         return configstr + "background_alpha=0\n"  # hide the background

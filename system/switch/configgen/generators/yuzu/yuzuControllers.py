@@ -4,6 +4,9 @@ import configparser
 from typing import TYPE_CHECKING, Any
 
 import pyudev
+import os
+import logging
+import subprocess
 
 from configgen.batoceraPaths import mkdir_if_not_exists
 from .yuzuPaths import YUZU_CONFIG
@@ -14,10 +17,12 @@ if TYPE_CHECKING:
     from configgen.Emulator import Emulator
 
 
-def generateControllerConfig(system: Emulator, playersControllers: ControllerMapping, yuzu_config_file) -> None:
+eslog = logging.getLogger(__name__)
+
+def generateControllerConfig(system: Emulator, playersControllers: ControllerMapping, yuzu_config_file):
 
     # pads
-    os.environ["PYSDL2_DLL_PATH"] = "/userdata/system/switch/extra/sdl/"
+    os.environ["PYSDL2_DLL_PATH"] = "/userdata/system/switch/extra/sdl/dll"
 
     # Define buttons and axis
     yuzuButtons = {
@@ -57,8 +62,8 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
     yuzu_config.read(yuzu_config_file)
 
     # Write to config
-    if not yuzuConfig.has_section("Controls"):
-        yuzuConfig.add_section("Controls")
+    if not yuzu_config.has_section("Controls"):
+        yuzu_config.add_section("Controls")
 
     # Rumble
     if system.isOptSet("yuzu_enable_rumble"):
@@ -104,12 +109,12 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
             for index in playersControllers:
                 controller = playersControllers[index]
                 eslog.debug("Controller configName: {}".format(
-                    controller.configName))
+                    controller.name))
                 eslog.debug("Controller index: {}".format(controller.index))
-                eslog.debug("Controller realName: {}".format(
-                    controller.realName))
-                eslog.debug("Controller dev: {}".format(controller.dev))
-                eslog.debug("Controller player: {}".format(controller.player))
+                eslog.debug("Controller real_name: {}".format(
+                    controller.real_name))
+                eslog.debug("Controller dev: {}".format(controller.device_path))
+                eslog.debug("Controller player: {}".format(controller.player_number))
                 eslog.debug("Controller GUID: {}".format(controller.guid))
                 eslog.debug("")
             eslog.debug(
@@ -368,20 +373,20 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
                 which_pad = "p" + str(lastplayer+1) + "_pad"
 
                 if debugcontrollers:
-                    eslog.debug("Controller configName: {}".format(controller.configName))
+                    eslog.debug("Controller configName: {}".format(controller.name))
                     eslog.debug("Controller index: {}".format(controller.index))
-                    eslog.debug("Controller realName: {}".format(controller.realName))                
-                    eslog.debug("Controller dev: {}".format(controller.dev))
-                    eslog.debug("Controller player: {}".format(controller.player))
+                    eslog.debug("Controller real_name: {}".format(controller.real_name))                
+                    eslog.debug("Controller dev: {}".format(controller.device_path))
+                    eslog.debug("Controller player: {}".format(controller.player_number))
                     eslog.debug("Controller GUID: {}".format(controller.guid))
                     eslog.debug("Which Pad: {}".format(which_pad))
 
 
-                if(playersControllers[index].realName == 'Nintendo Switch Combined Joy-Cons'):  #works in Batocera v37
+                if(playersControllers[index].real_name == 'Nintendo Switch Combined Joy-Cons'):  #works in Batocera v37
                     outputpath = "nintendo_joycons_combined"
                     sdl_mapping = next((item for item in sdl_devices if (item["path"] == outputpath or item["path"] == '/devices/virtual')),None)
                 else:
-                    command = "udevadm info --query=path --name=" + playersControllers[index].dev
+                    command = "udevadm info --query=path --name=" + playersControllers[index].device_path
                     outputpath = ((subprocess.check_output(command, shell=True)).decode()).partition('/input/')[0]
                     sdl_mapping = next((item for item in sdl_devices if item["path"] == outputpath),None)
 
@@ -447,12 +452,12 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
 
                         #Configure buttons and triggers
                         for x in yuzuButtons:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                         for x in yuzuAxis:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber, 1)))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber, 1)))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
 
                     elif (system.isOptSet(which_pad) and (system.config[which_pad] == "3")):
@@ -489,12 +494,12 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
 
                         #Configure buttons and triggers
                         for x in yuzuButtons:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                         for x in yuzuAxis:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber,2)))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber,2)))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                     else:
                         eslog.debug("Controller Type: Non-Joycon")
@@ -529,38 +534,38 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
 
                         #Configure buttons and triggers
                         for x in yuzuButtons:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setButton(yuzuButtons[x], inputguid, controller.inputs,portnumber)))
                     
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")                           
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")                           
 
                         for x in yuzuAxis:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber,0)))     
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{}"'.format(YuzuMainlineGenerator.setAxis(yuzuAxis[x], inputguid, controller.inputs, portnumber,0)))     
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                     #Enable motion no matter what, as enabling won't hurt things if it doesn't exist
-                    yuzuConfig.set("Controls", "player_" + controllernumber + "_motionleft", '"engine:sdl,motion:0,port:{},guid:{}"'.format(portnumber,inputguid))
-                    yuzuConfig.set("Controls", "player_" + controllernumber + "_motionright", '"engine:sdl,motion:0,port:{},guid:{}"'.format(portnumber,inputguid))
+                    yuzu_config.set("Controls", "player_" + controllernumber + "_motionleft", '"engine:sdl,motion:0,port:{},guid:{}"'.format(portnumber,inputguid))
+                    yuzu_config.set("Controls", "player_" + controllernumber + "_motionright", '"engine:sdl,motion:0,port:{},guid:{}"'.format(portnumber,inputguid))
 
-                    yuzuConfig.set("Controls", "player_" + controllernumber + "_connected", "true")
+                    yuzu_config.set("Controls", "player_" + controllernumber + "_connected", "true")
                     if (controllernumber == "0"):
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
                     else:
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
 
                     if system.isOptSet(which_pad):
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type", system.config["p1_pad"])
-                        #yuzuConfig.set("Controls", "player_0_type", system.config["p1_pad"])
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type", system.config["p1_pad"])
+                        #yuzu_config.set("Controls", "player_0_type", system.config["p1_pad"])
                     else:
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type", "0")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type", "0")
 
-                    yuzuConfig.set("Controls", "player_" + controllernumber + "_type\\default", "true")
+                    yuzu_config.set("Controls", "player_" + controllernumber + "_type\\default", "true")
 
                     if system.isOptSet("yuzu_enable_rumble"):
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
                     else:
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
 
                     lastplayer = int(controllernumber) + 1
 
@@ -600,39 +605,39 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
                         #Configure buttons and triggers
                         for x in yuzuPad1Buttons:
                             eslog.debug("Left Joycon {}".format(x))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,yuzuPad1Buttons[x],portnumber,pad1))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,yuzuPad1Buttons[x],portnumber,pad1))
                         for x in yuzuPad2Buttons:
                             eslog.debug("Left Joycon {}".format(x))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,yuzuPad2Buttons[x],portnumber,pad2))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,yuzuPad2Buttons[x],portnumber,pad2))
 
                         #sl and sr of left pad
                         eslog.debug("Left Joycon SL")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sl", '"pad:{},button:32,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sr", '"pad:{},button:16,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_button_sl", '"pad:{},button:32,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_button_sr", '"pad:{},button:16,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
 
                         #set joysticks
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_lstick", '"axis_y:1,axis_x:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_rstick", '"axis_y:3,axis_x:2,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_lstick", '"axis_y:1,axis_x:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_rstick", '"axis_y:3,axis_x:2,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
                         
                         #Enable motion no matter what, as enabling won't hurt things if it doesn't exist
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_motionleft", '"motion:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_motionright", '"motion:1,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_connected", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_motionleft", '"motion:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_motionright", '"motion:1,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_connected", "true")
                         
                         if (controllernumber == "0"):
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
                         else:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
 
                         #Forcing to left joycon
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type", "2")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type\\default", "false")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type", "2")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type\\default", "false")
                         if system.isOptSet("yuzu_enable_rumble"):
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
                         else:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
 
                         eslog.debug("Controller Type: Right Joycon after Left")
                         pad1 = 2
@@ -643,41 +648,41 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
                         #Configure buttons and triggers
                         for x in yuzuPad1Buttons:
                             eslog.debug("Right Joycon {}".format(x))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,yuzuPad1Buttons[x],portnumber,pad1))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,yuzuPad1Buttons[x],portnumber,pad1))
                         for x in yuzuPad2Buttons:
                             eslog.debug("Right Joycon {}".format(x))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,yuzuPad2Buttons[x],portnumber,pad2))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,yuzuPad2Buttons[x],portnumber,pad2))
 
                         #sl and sr of right pad
                         eslog.debug("Right Joycon SL")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sl", '"pad:{},button:8192,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sr", '"pad:{},button:4096,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_button_sl", '"pad:{},button:8192,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_button_sr", '"pad:{},button:4096,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
 
                         #set joysticks
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_lstick", '"axis_y:1,axis_x:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_rstick", '"axis_y:3,axis_x:2,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_lstick", '"axis_y:1,axis_x:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_rstick", '"axis_y:3,axis_x:2,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
                         
                         #Enable motion no matter what, as enabling won't hurt things if it doesn't exist
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_motionleft", '"motion:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_motionright", '"motion:1,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_motionleft", '"motion:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_motionright", '"motion:1,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
 
 
 
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_connected", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_connected", "true")
                         if (controllernumber == "0"):
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
                         else:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
 
                         #Forcing to right joycons
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type", "3")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type\\default", "false")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type", "3")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type\\default", "false")
                         if system.isOptSet("yuzu_enable_rumble"):
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
                         else:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
 
 
 
@@ -692,41 +697,41 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
                         #Configure buttons and triggers
                         for x in yuzuPad1Buttons:
                             eslog.debug("Right Joycon {}".format(x))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,yuzuPad1Buttons[x],portnumber,pad1))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,yuzuPad1Buttons[x],portnumber,pad1))
                         for x in yuzuPad2Buttons:
                             eslog.debug("Right Joycon {}".format(x))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,yuzuPad2Buttons[x],portnumber,pad2))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,yuzuPad2Buttons[x],portnumber,pad2))
 
                         #sl and sr of right pad
                         eslog.debug("Right Joycon SL")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sl", '"pad:{},button:8192,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sr", '"pad:{},button:4096,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_button_sl", '"pad:{},button:8192,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_button_sr", '"pad:{},button:4096,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
 
                         #set joysticks
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_lstick", '"axis_y:1,axis_x:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_rstick", '"axis_y:3,axis_x:2,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_lstick", '"axis_y:1,axis_x:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_rstick", '"axis_y:3,axis_x:2,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
                         
                         #Enable motion no matter what, as enabling won't hurt things if it doesn't exist
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_motionleft", '"motion:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_motionright", '"motion:1,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_motionleft", '"motion:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_motionright", '"motion:1,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
 
 
 
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_connected", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_connected", "true")
                         if (controllernumber == "0"):
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
                         else:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
 
                         #Forcing to right joycons
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type", "3")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type\\default", "false")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type", "3")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type\\default", "false")
                         if system.isOptSet("yuzu_enable_rumble"):
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
                         else:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
 
 
                         eslog.debug("Controller Type: Left Joycon After Right")
@@ -738,39 +743,39 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
                         #Configure buttons and triggers
                         for x in yuzuPad1Buttons:
                             eslog.debug("Left Joycon {}".format(x))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,yuzuPad1Buttons[x],portnumber,pad1))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,yuzuPad1Buttons[x],portnumber,pad1))
                         for x in yuzuPad2Buttons:
                             eslog.debug("Left Joycon {}".format(x))
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,yuzuPad2Buttons[x],portnumber,pad2))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,yuzuPad2Buttons[x],portnumber,pad2))
 
                         #sl and sr of left pad
                         eslog.debug("Left Joycon SL")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sl", '"pad:{},button:32,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sr", '"pad:{},button:16,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_button_sl", '"pad:{},button:32,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_button_sr", '"pad:{},button:16,port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
 
                         #set joysticks
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_lstick", '"axis_y:1,axis_x:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_rstick", '"axis_y:3,axis_x:2,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_lstick", '"axis_y:1,axis_x:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_rstick", '"axis_y:3,axis_x:2,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
                         
                         #Enable motion no matter what, as enabling won't hurt things if it doesn't exist
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_motionleft", '"motion:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_motionright", '"motion:1,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_connected", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_motionleft", '"motion:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_motionright", '"motion:1,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_connected", "true")
                         
                         if (controllernumber == "0"):
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
                         else:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
 
                         #Forcing to left joycon
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type", "2")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type\\default", "false")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type", "2")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type\\default", "false")
                         if system.isOptSet("yuzu_enable_rumble"):
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
                         else:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
 
                     else:
                         eslog.debug("Controller Type: Dual Joycons")
@@ -780,37 +785,37 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
 
                         #Configure buttons and triggers
                         for x in yuzuPad1Buttons:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,yuzuPad1Buttons[x],portnumber,pad1))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,yuzuPad1Buttons[x],portnumber,pad1))
                         for x in yuzuPad2Buttons:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,yuzuPad2Buttons[x],portnumber,pad2))
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"pad:{},button:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,yuzuPad2Buttons[x],portnumber,pad2))
 
                         #sl and sr not connected for dual joycon mode
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "button_sl", '[empty]')
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "button_sr", '[empty]')
+                        yuzu_config.set("Controls", "player_" + controllernumber + "button_sl", '[empty]')
+                        yuzu_config.set("Controls", "player_" + controllernumber + "button_sr", '[empty]')
 
                         #set joysticks
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_lstick", '"axis_y:1,axis_x:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_rstick", '"axis_y:3,axis_x:2,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_lstick", '"axis_y:1,axis_x:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_rstick", '"axis_y:3,axis_x:2,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
                         
                         #Enable motion no matter what, as enabling won't hurt things if it doesn't exist
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_motionleft", '"motion:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_motionright", '"motion:1,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_motionleft", '"motion:0,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad1,portnumber,pad1))
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_motionright", '"motion:1,pad:{},port:{},guid:0000000000000000000000000000000{},engine:joycon"'.format(pad2,portnumber,pad2))
 
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_connected", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_connected", "true")
                         if (controllernumber == "0"):
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
                         else:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
 
                         #Forcing to dual joycons
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type", "1")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type\\default", "false")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type", "1")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type\\default", "false")
                         if system.isOptSet("yuzu_enable_rumble"):
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
                         else:
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
-                            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
+                            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
                         
                 else:
                     eslog.debug("SDL controller Branch")
@@ -885,20 +890,20 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
                         #Configure buttons and triggers
                         for x in yuzuButtons:
                             if("hat" in str(yuzuButtons[x])):
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"{},direction:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],yuzuHat[x],inputguid,portnumber))
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{},direction:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],yuzuHat[x],inputguid,portnumber))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                             elif("axis" in str(yuzuButtons[x])):
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,invert:+,port:{},guid:{},axis:{},threshold:0.500000"'.format(portnumber,inputguid,yuzuAxisButtons[x]))
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,invert:+,port:{},guid:{},axis:{},threshold:0.500000"'.format(portnumber,inputguid,yuzuAxisButtons[x]))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                             else:
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"button:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],inputguid,portnumber))
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"button:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],inputguid,portnumber))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                         #set joysticks
                         for x in yuzuAxis:
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,port:{},guid:{},axis_x:{},offset_x:-0.011750,axis_y:{},offset_y:-0.027467,invert_x:-,invert_y:+,deadzone:0.150000,range:0.950000"'.format(portnumber,inputguid,yuzuAxis[x]+1,yuzuAxis[x]))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,port:{},guid:{},axis_x:{},offset_x:-0.011750,axis_y:{},offset_y:-0.027467,invert_x:-,invert_y:+,deadzone:0.150000,range:0.950000"'.format(portnumber,inputguid,yuzuAxis[x]+1,yuzuAxis[x]))
                     elif (system.isOptSet(which_pad) and (system.config[which_pad] == "3")):
                         eslog.debug("Controller Type: Right Joycon")
                         #2 = Left Joycon
@@ -970,18 +975,18 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
                         #Configure buttons and triggers
                         for x in yuzuButtons:
                             if("hat" in str(yuzuButtons[x])):
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"{},direction:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],yuzuHat[x],inputguid,portnumber))
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{},direction:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],yuzuHat[x],inputguid,portnumber))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
                             elif("axis" in str(yuzuButtons[x])):
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,invert:+,port:{},guid:{},axis:{},threshold:0.500000"'.format(portnumber,inputguid,yuzuAxisButtons[x]))
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,invert:+,port:{},guid:{},axis:{},threshold:0.500000"'.format(portnumber,inputguid,yuzuAxisButtons[x]))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
                             else:
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"button:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],inputguid,portnumber))
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"button:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],inputguid,portnumber))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                         #set joysticks
                         for x in yuzuAxis:
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,port:{},guid:{},axis_x:{},offset_x:-0.011750,axis_y:{},offset_y:-0.027467,invert_x:+,invert_y:-,deadzone:0.150000,range:0.950000"'.format(portnumber,inputguid,yuzuAxis[x]+1,yuzuAxis[x]))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,port:{},guid:{},axis_x:{},offset_x:-0.011750,axis_y:{},offset_y:-0.027467,invert_x:+,invert_y:-,deadzone:0.150000,range:0.950000"'.format(portnumber,inputguid,yuzuAxis[x]+1,yuzuAxis[x]))
                             
                     else:
                         #0 = Pro Controller, 1 = Dual Joycons, 4 = Handheld Mode,  (and other cases not yet defined)
@@ -1051,49 +1056,49 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
                         #Configure buttons and triggers
                         for x in yuzuButtons:
                             if("hat" in str(yuzuButtons[x])):
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"{},direction:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],yuzuHat[x],inputguid,portnumber))
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"{},direction:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],yuzuHat[x],inputguid,portnumber))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
                             elif("axis" in str(yuzuButtons[x])):
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,invert:+,port:{},guid:{},axis:{},threshold:0.500000"'.format(portnumber,inputguid,yuzuAxisButtons[x]))
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,invert:+,port:{},guid:{},axis:{},threshold:0.500000"'.format(portnumber,inputguid,yuzuAxisButtons[x]))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
                             else:
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"button:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],inputguid,portnumber))
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"button:{},guid:{},port:{},engine:sdl"'.format(yuzuButtons[x],inputguid,portnumber))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x + "\\default", "false")
 
                         #set joysticks
                         for x in yuzuAxis:
-                                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,port:{},guid:{},axis_x:{},offset_x:-0.011750,axis_y:{},offset_y:-0.027467,invert_x:+,invert_y:+,deadzone:0.150000,range:0.950000"'.format(portnumber,inputguid,yuzuAxis[x],yuzuAxis[x]+1))
+                                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '"engine:sdl,port:{},guid:{},axis_x:{},offset_x:-0.011750,axis_y:{},offset_y:-0.027467,invert_x:+,invert_y:+,deadzone:0.150000,range:0.950000"'.format(portnumber,inputguid,yuzuAxis[x],yuzuAxis[x]+1))
                                     
 
 
                     #Enable motion no matter what, as enabling won't hurt things if it doesn't exist
-                    yuzuConfig.set("Controls", "player_" + controllernumber + "_motionleft", '"engine:sdl,motion:0,port:{},guid:{}"'.format(portnumber,inputguid))
-                    yuzuConfig.set("Controls", "player_" + controllernumber + "_motionright", '"engine:sdl,motion:0,port:{},guid:{}"'.format(portnumber,inputguid))
+                    yuzu_config.set("Controls", "player_" + controllernumber + "_motionleft", '"engine:sdl,motion:0,port:{},guid:{}"'.format(portnumber,inputguid))
+                    yuzu_config.set("Controls", "player_" + controllernumber + "_motionright", '"engine:sdl,motion:0,port:{},guid:{}"'.format(portnumber,inputguid))
 
-                    yuzuConfig.set("Controls", "player_" + controllernumber + "_connected", "true")
+                    yuzu_config.set("Controls", "player_" + controllernumber + "_connected", "true")
                     if (controllernumber == "0"):
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "true")
                     else:
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_connected\\default", "false")
 
                     if system.isOptSet(which_pad):
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type", system.config["p1_pad"])
-                        #yuzuConfig.set("Controls", "player_0_type", system.config["p1_pad"])
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type", system.config["p1_pad"])
+                        #yuzu_config.set("Controls", "player_0_type", system.config["p1_pad"])
                     else:
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_type", "0")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_type", "0")
 
 
-                    yuzuConfig.set("Controls", "player_" + controllernumber + "_button_screenshot", "[empty]")
-                    yuzuConfig.set("Controls", "player_" + controllernumber + "_button_screenshot\\default", "false")
-                    yuzuConfig.set("Controls", "player_" + controllernumber + "_type\\default", "true")
+                    yuzu_config.set("Controls", "player_" + controllernumber + "_button_screenshot", "[empty]")
+                    yuzu_config.set("Controls", "player_" + controllernumber + "_button_screenshot\\default", "false")
+                    yuzu_config.set("Controls", "player_" + controllernumber + "_type\\default", "true")
 
 
                     if system.isOptSet("yuzu_enable_rumble"):
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", system.config["yuzu_enable_rumble"])
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", system.config["yuzu_enable_rumble"])
                     else:
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
-                        yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
+                        yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
 
                     lastplayer = int(controllernumber) + 1
 
@@ -1105,59 +1110,63 @@ def generateControllerConfig(system: Emulator, playersControllers: ControllerMap
             controllernumber = str(y)
             eslog.debug("Setting Controller: {}".format(controllernumber))
             for x in yuzuButtons:
-                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '""')
+                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '""')
             for x in yuzuAxis:
-                yuzuConfig.set("Controls", "player_" + controllernumber + "_" + x, '""')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_a", '"toggle:0,code:67,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_a\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_b", '"toggle:0,code:88,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_b\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_ddown", '"toggle:0,code:16777237,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_ddown\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_dleft", '"toggle:0,code:16777234,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_dleft\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_dright", '"toggle:0,code:16777236,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_dright\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_dup", '"toggle:0,code:16777235,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_dup\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_home", '"toggle:0,code:0,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_home\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_l", '"toggle:0,code:81,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_l\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_lstick", '"toggle:0,code:70,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_lstick\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_minus", '"toggle:0,code:78,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_minus\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_plus", '"toggle:0,code:77,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_plus\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_r", '"toggle:0,code:69,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_r\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_rstick", '"toggle:0,code:71,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_rstick\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_screenshot", '"toggle:0,code:0,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_screenshot\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sl", '"toggle:0,code:81,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sl\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sr", '"toggle:0,code:69,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_sr\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_x", '"toggle:0,code:86,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_x\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_y", '"toggle:0,code:90,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_y\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_zl", '"toggle:0,code:82,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_zl\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_zr", '"toggle:0,code:84,engine:keyboard"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_button_zr\\default", "true")
+                yuzu_config.set("Controls", "player_" + controllernumber + "_" + x, '""')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_a", '"toggle:0,code:67,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_a\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_b", '"toggle:0,code:88,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_b\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_ddown", '"toggle:0,code:16777237,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_ddown\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_dleft", '"toggle:0,code:16777234,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_dleft\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_dright", '"toggle:0,code:16777236,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_dright\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_dup", '"toggle:0,code:16777235,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_dup\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_home", '"toggle:0,code:0,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_home\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_l", '"toggle:0,code:81,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_l\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_lstick", '"toggle:0,code:70,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_lstick\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_minus", '"toggle:0,code:78,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_minus\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_plus", '"toggle:0,code:77,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_plus\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_r", '"toggle:0,code:69,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_r\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_rstick", '"toggle:0,code:71,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_rstick\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_screenshot", '"toggle:0,code:0,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_screenshot\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_sl", '"toggle:0,code:81,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_sl\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_sr", '"toggle:0,code:69,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_sr\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_x", '"toggle:0,code:86,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_x\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_y", '"toggle:0,code:90,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_y\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_zl", '"toggle:0,code:82,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_zl\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_zr", '"toggle:0,code:84,engine:keyboard"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_button_zr\\default", "true")
 
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_lstick", '"modifier_scale:0.500000,modifier:toggle$00$1code$016777248$1engine$0keyboard,right:toggle$00$1code$068$1engine$0keyboard,left:toggle$00$1code$065$1engine$0keyboard,down:toggle$00$1code$083$1engine$0keyboard,up:toggle$00$1code$087$1engine$0keyboard,engine:analog_from_button"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_lstick\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_rstick", '"modifier_scale:0.500000,modifier:toggle$00$1code$00$1engine$0keyboard,right:toggle$00$1code$076$1engine$0keyboard,left:toggle$00$1code$074$1engine$0keyboard,down:toggle$00$1code$075$1engine$0keyboard,up:toggle$00$1code$073$1engine$0keyboard,engine:analog_from_button"')
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_rstick\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_lstick", '"modifier_scale:0.500000,modifier:toggle$00$1code$016777248$1engine$0keyboard,right:toggle$00$1code$068$1engine$0keyboard,left:toggle$00$1code$065$1engine$0keyboard,down:toggle$00$1code$083$1engine$0keyboard,up:toggle$00$1code$087$1engine$0keyboard,engine:analog_from_button"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_lstick\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_rstick", '"modifier_scale:0.500000,modifier:toggle$00$1code$00$1engine$0keyboard,right:toggle$00$1code$076$1engine$0keyboard,left:toggle$00$1code$074$1engine$0keyboard,down:toggle$00$1code$075$1engine$0keyboard,up:toggle$00$1code$073$1engine$0keyboard,engine:analog_from_button"')
+            yuzu_config.set("Controls", "player_" + controllernumber + "_rstick\\default", "true")
 
 
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected", "false")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_connected\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_type", "0")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_type\\default", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
-            yuzuConfig.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_connected", "false")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_connected\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_type", "0")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_type\\default", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled", "true")
+            yuzu_config.set("Controls", "player_" + controllernumber + "_vibration_enabled\\default", "true")
+    
+    with open(yuzu_config_file, 'w') as configfile:
+        eslog.debug("Writing controls to config")
+        yuzu_config.write(configfile)

@@ -17,19 +17,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 
-from configgen.Command import Command
+import configgen.Command as Command
 from configgen.batoceraPaths import CACHE, CONFIGS, SAVES, mkdir_if_not_exists
 
 from configgen.controller import generate_sdl_game_controller_config
-from configgen.utils import vulkan
 from ..Generator import Generator
-
-
-# TODO
-# Remove whichever line below doesn't work
-from ...sdl2.sdlgfx import ellipseColor
-# from system.switch.configgen.sdl2.sdlgfx import ellipseColor
-
 
 from . import yuzuControllers
 from .yuzuPaths import YUZU_CONFIG, YUZU_FIRMWARE, YUZU_KEYS, YUZU_ROMDIR, YUZU_SAVES, YUZU_APPIMAGE, YUZU_EA_APPIMAGE
@@ -63,13 +55,14 @@ class YuzuGenerator(Generator):
             rom_path = paths[0]
 
         # Create the settings file
-        YuzuGenerator.YuzuConfig(YUZU_CONFIG / "qt-config.ini", system)
+        YuzuGenerator.YuzuConfig(YUZU_CONFIG / "qt-config.ini", system, players_controllers)
 
         # Set-up the controllers
-        yuzuControllers.generateControllerConfig(system, playersControllers, YUZU_CONFIG / "qt-config.ini")
+        yuzuControllers.generateControllerConfig(system, players_controllers, YUZU_CONFIG / "qt-config.ini")
 
         # Set executable to launch from ES emulator config
-        if emulator == 'yuzu-early-access':
+        eslog.debug(f"System name {system.name}")
+        if system.name == 'yuzu-early-access':
             app_image = YUZU_EA_APPIMAGE
         else:
             app_image = YUZU_APPIMAGE
@@ -83,8 +76,8 @@ class YuzuGenerator(Generator):
         # WILL NOT BE USED IF THIS ISN'T SET
         environment_variables = {
             "QT_QPA_PLATFORM": "xcb",
-            # "XDG_CONFIG_HOME": f"{CONFIGS}",
-            # "XDG_DATA_HOME": f"{CONFIGS}",
+            "XDG_CONFIG_HOME": f"{CONFIGS}",
+            "XDG_DATA_HOME": f"{CONFIGS}",
             "XDG_CACHE_HOME": f"{CACHE}",
             "QT_QPA_PLATFORM": "xcb",
             "SDL_GAMECONTROLLERCONFIG": generate_sdl_game_controller_config(players_controllers)
@@ -384,9 +377,9 @@ class YuzuGenerator(Generator):
         yuzu_config.set("Services", "bcat_backend\\default", "none") 
 
         ### update the configuration file
-        if not os.path.exists(os.path.dirname(yuzu_configFile)):
-            os.makedirs(os.path.dirname(yuzu_configFile))
-        with open(yuzu_configFile, 'w') as configfile:
+        if not os.path.exists(os.path.dirname(yuzu_config_file)):
+            os.makedirs(os.path.dirname(yuzu_config_file))
+        with open(yuzu_config_file, 'w') as configfile:
             yuzu_config.write(configfile)
 
 
