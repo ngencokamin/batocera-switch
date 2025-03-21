@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import batoceraPaths
+from configgen.batoceraPaths import CACHE, CONFIGS, SAVES, mkdir_if_not_exists
 import generators
 from configgen.generators.Generator import Generator
 import Command as Command
@@ -8,11 +8,13 @@ import os
 import stat
 import json
 import uuid
-from os import path
+import os
 import controllersConfig as controllersConfig
 from shutil import copyfile
 from utils.logger import get_logger
 import subprocess
+
+from .ryujinxPaths import RYUJINX_CONFIG, RYUJINX_ROMDIR, RYUJINX_APPIMAGE, RYUJINX_AVALONIA_APPIMAGE, RYUJINX_LDN_APPIMAGE
 
 
 eslog = get_logger(__name__)
@@ -20,52 +22,53 @@ eslog = get_logger(__name__)
 class RyujinxMainlineGenerator(Generator):
 
     def generate(self, system, rom, playersControllers, gameResolution):
-        #handles chmod so you just need to download Ryujinx.AppImage
-        if os.path.exists("/userdata/system/switch/Ryujinx.AppImage"):
-            st = os.stat("/userdata/system/switch/Ryujinx.AppImage")
-            os.chmod("/userdata/system/switch/Ryujinx.AppImage", st.st_mode | stat.S_IEXEC)
-        if os.path.exists("/userdata/system/switch/Ryujinx-Avalonia.AppImage"):
-            st = os.stat("/userdata/system/switch/Ryujinx-Avalonia.AppImage")
-            os.chmod("/userdata/system/switch/Ryujinx-Avalonia.AppImage", st.st_mode | stat.S_IEXEC)
-        if os.path.exists("/userdata/system/switch/Ryujinx-LDN.AppImage"):
-            st = os.stat("/userdata/system/switch/Ryujinx-LDN.AppImage")
-            os.chmod("/userdata/system/switch/Ryujinx-LDN.AppImage", st.st_mode | stat.S_IEXEC)  
+        # Set executaable path by system config choice
+        if system.config['emulator'] == 'ryujinx-avalonia':
+            executable = RYUJINX_AVALONIA_APPIMAGE
+        elif system.config['emulator'] == 'ryujinx-ldn':
+            executable = RYUJINX_LDN_APPIMAGE
+        else:
+            executable = RYUJINX_APPIMAGE
+        
+        # Check if executable exists
+        if os.path.exists(executable):
+            # Check if execute permissions are set, adding if not
+            st = os.stat(executable)
+            if not (st.st_mode & stat.S_IXUSR):
+                os.chmod(file_path, st.st_mode | stat.S_IXUSR)
+        # Fall back to base Ryujinx if selected system does not exist
+        elif os.path.exists(RYUJINX_APPIMAGE):
+            eslog.warning(f"Executable for {system.config['emulator']} not found. Falling back to base Ryujinx executable.")
+            executable = RYUJINX_APPIMAGE
+            st = os.stat(executable)
+            if not (st.st_mode & stat.S_IXUSR):
+                os.chmod(file_path, st.st_mode | stat.S_IXUSR)
+        # Exit if neither specified nor base Ryujinx is found
+        else:
+            eslog.error(f"Could not find executable for Ryujinx base version or {system.config['emulator']}. Please ensure you have added a Ryujinx AppImage with the correct name.")
+            
+        # Create config dirs if they don't already exist
+        mkdir_if_not_exists(RYUJINX_CONFIG)
+        mkdir_if_not_exists(RYUJINX_CONFIG / "System")
 
-        if not path.isdir(path.join(batoceraPaths.CONFIGS, "Ryujinx")):
-            os.mkdir(path.join(batoceraPaths.CONFIGS, "Ryujinx"))
-        if not path.isdir(path.join(batoceraPaths.CONFIGS, "Ryujinx/system")):
-            os.mkdir(path.join(batoceraPaths.CONFIGS, "Ryujinx/system"))
-
-        RyujinxConfig = path.join(batoceraPaths.CONFIGS, "Ryujinx/Config.json")
-        RyujinxHome = batoceraPaths.CONFIGS
-
-        firstrun = True
-        if path.exists(RyujinxConfig):
-            firstrun = False
-        #First Run - Open Ryujinx for firmware install if it's never existed before
+        # Check if Ryujinx has been run before by checking for Config Json
+        CONFIG_FILE = RYUJINX_CONFIG / "Config.json"
+        firstrun = False if os.path.exists(CONFIG_FILE) else True
 
         #Configuration update
         RyujinxMainlineGenerator.writeRyujinxConfig(RyujinxConfig, system, playersControllers)
 
-        if firstrun:  #Run Ryujinx with no rom so users can install firmware
-            if system.config['emulator'] == 'ryujinx-avalonia':
-                commandArray = ["/userdata/system/switch/Ryujinx-Avalonia.AppImage"]
-            elif system.config['emulator'] == 'ryujinx-ldn':
-                commandArray = ["/userdata/system/switch/Ryujinx-LDN.AppImage"]
-            else:
-                commandArray = ["/userdata/system/switch/Ryujinx.AppImage"]
+        # Open Ryujinx without Rom for firmware install if it's never been opened before, else launch with rom
+        if firstrun:  
+            commandArray = [str(executable)]
         else:
-            if system.config['emulator'] == 'ryujinx-avalonia':
-                commandArray = ["/userdata/system/switch/Ryujinx-Avalonia.AppImage" , rom]
-            elif system.config['emulator'] == 'ryujinx-ldn':
-                commandArray = ["/userdata/system/switch/Ryujinx-LDN.AppImage" , rom]
-            else:
-                commandArray = ["/userdata/system/switch/Ryujinx.AppImage" , rom]
+            commandArray = [str(executable) , rom]
+        
         eslog.debug("Controller Config before Playing: {}".format(controllersConfig.generateSdlGameControllerConfig(playersControllers)))
         #, "SDL_GAMECONTROLLERCONFIG": controllersConfig.generateSdlGameControllerConfig(playersControllers)
         return Command.Command(
             array=commandArray,
-            env={"XDG_CONFIG_HOME":RyujinxHome, "XDG_CACHE_HOME":batoceraPaths.CACHE, "QT_QPA_PLATFORM":"xcb", "SDL_GAMECONTROLLERCONFIG": controllersConfig.generateSdlGameControllerConfig(playersControllers)}
+            env={"XDG_CONFIG_HOME":str(CONFIGS), "XDG_CACHE_HOME":str(CACHE), "QT_QPA_PLATFORM":"xcb", "SDL_GAMECONTROLLERCONFIG": controllersConfig.generateSdlGameControllerConfig(playersControllers)}
             )
 
     def writeRyujinxConfig(RyujinxConfigFile, system, playersControllers):
@@ -704,7 +707,7 @@ class RyujinxMainlineGenerator(Generator):
         # It's problematic in case of hybrid laptop as it may always default to the igpu instead of the dgpu
         # data['preferred_gpu'] = ""
 
-        with open(path.join(batoceraPaths.CONFIGS, "Ryujinx/BeforeRyu.json"), "w") as outfile:
+        with open(RYUJINX_CONFIG / "BeforeRyu.json", "w") as outfile:
             outfile.write(json.dumps(data, indent=2))
 
         with open(RyujinxConfigFile, "w") as outfile:
