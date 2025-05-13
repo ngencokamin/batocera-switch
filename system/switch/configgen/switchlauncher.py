@@ -50,15 +50,7 @@ if os.path.exists("/var/run/emulatorlauncher.perf"):
     _profiler = cProfile.Profile()
     _profiler.enable()
 
-### import always needed ###
-# import configgen.utils.videoMode as videoMode
-############################
-
-
 eslog = logging.getLogger(__name__)
-
-
-# My Code
 
 def main(args: argparse.Namespace, maxnbplayers: int) -> int:
     # squashfs roms if squashed
@@ -70,26 +62,7 @@ def main(args: argparse.Namespace, maxnbplayers: int) -> int:
 
 
 def start_rom(args: argparse.Namespace, maxnbplayers: int, rom: str, romConfiguration: str) -> int:
-    # global profiler
-
-    # controllers
-    # playersControllers = dict()
-
-    # controllersInput = []
-    # for p in range(1, maxnbplayers+1):
-    #     ci = {}
-    #     ci["index"] = getattr(args, "p{}index"     .format(p))
-    #     ci["guid"] = getattr(args, "p{}guid"      .format(p))
-    #     ci["name"] = getattr(args, "p{}name"      .format(p))
-    #     ci["devicepath"] = getattr(args, "p{}devicepath".format(p))
-    #     ci["nbbuttons"] = getattr(args, "p{}nbbuttons" .format(p))
-    #     ci["nbhats"] = getattr(args, "p{}nbhats"    .format(p))
-    #     ci["nbaxes"] = getattr(args, "p{}nbaxes"    .format(p))
-    #     controllersInput.append(ci)
-
-    # # Read the controller configuration
-    # playersControllers = controllers.loadControllerConfig(controllersInput)
-
+    # Initialize player controllers
     player_controllers = Controller.load_for_players(maxnbplayers, args)
 
     # find the system to run
@@ -206,12 +179,7 @@ def start_rom(args: argparse.Namespace, maxnbplayers: int, rom: str, romConfigur
         if args.state_filename is not None:
             system.config["state_filename"] = args.state_filename
 
-        # TO-DO: Fix Batocera < 41 Support
-        # if batocera_version is not None and batocera_version >= 39:
-        #     if generator.getMouseMode(system.config, effectiveRom):
-        #         mouseChanged = True
-        #         videoMode.changeMouse(True)
-        # else:
+        # mouse options        
         if generator.getMouseMode(system.config, rom):
             mouseChanged = True
             videoMode.changeMouse(True)
@@ -225,6 +193,7 @@ def start_rom(args: argparse.Namespace, maxnbplayers: int, rom: str, romConfigur
 
         # enable mouse
         subprocess.run(["unclutter-remote", "-s"])
+        
         # run a script before emulator starts
         callExternalScripts(SYSTEM_SCRIPTS, "gameStart", [
                             systemName, system.config['emulator'], effectiveCore, effectiveRom])
@@ -244,13 +213,11 @@ def start_rom(args: argparse.Namespace, maxnbplayers: int, rom: str, romConfigur
             if executionDirectory is not None:
                 os.chdir(executionDirectory)
 
-            # Original
-            # cmd = generator.generate(system, rom, playersControllers, guns, gameResolution)
-            # Switch
+            # Generate command
             cmd = generator.generate(
                 system, rom, player_controllers, gameResolution)
 
-            # if system.isOptSet('hud_support') and system.getOptBoolean('hud_support') == True:
+            # Bezels
             hud_bezel = getHudBezel(system, generator, rom, gameResolution, controllers.gunsBordersSizeName(
                 guns, system.config), controllers.gunsBorderRatioType(guns, system.config))
             if (system.isOptSet('hud') and system.config['hud'] != "" and system.config['hud'] != "none") or hud_bezel is not None:
@@ -449,7 +416,7 @@ def getHudBezel(system: Emulator, generator: Generator, rom: str, gameResolution
     eslog.debug(f"applying bezel {overlay_png_file}")
     return overlay_png_file
 
-
+# Game info
 def extractGameInfosFromXml(xml: str) -> dict[str, str]:
     import xml.etree.ElementTree as ET
 
@@ -541,7 +508,7 @@ def getHudConfig(system: Emulator, systemName: str, emulator: str, core: str, ro
 
     return configstr
 
-
+# Execute command to launch game
 def runCommand(command: Command) -> int:
     global proc
 
