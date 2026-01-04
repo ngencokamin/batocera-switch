@@ -13,43 +13,47 @@ from .yuzuPaths import YUZU_CONFIG
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from configgen.controller import Controller, ControllerMapping
+    from configgen.controller import Controller, Controllers
     from configgen.Emulator import Emulator
 
 
 eslog = logging.getLogger(__name__)
 
-def generateControllerConfig(system: Emulator, playersControllers: ControllerMapping, yuzu_config_file):
-
-    # pads
-    os.environ["PYSDL2_DLL_PATH"] = "/userdata/system/switch/extra/sdl/"
+def generateControllerConfig(system: Emulator, playersControllers: Controllers, yuzu_config_file):
 
     # Define buttons and axis
     yuzuButtons = {
-        "button_a":      "a",
-        "button_b":      "b",
-        "button_x":      "x",
-        "button_y":      "y",
-        "button_dup":     "up",
-        "button_ddown":   "down",
-        "button_dleft":   "left",
-        "button_dright":  "right",
-        "button_l":      "pageup",
-        "button_r":      "pagedown",
-        "button_plus":  "start",
-        "button_minus": "select",
-        "button_sl":     "pageup",
-        "button_sr":     "pagedown",
-        "button_zl":     "l2",
-        "button_zr":     "r2",
-        "button_lstick":     "l3",
-        "button_rstick":     "r3",
-        "button_home":   "hotkey"
+        "button_a":      "1",
+        "button_b":      "0",
+        "button_x":      "3",
+        "button_y":      "2",
+        "button_dup":     "11",
+        "button_ddown":   "12",
+        "button_dleft":   "13",
+        "button_dright":  "14",
+        "button_l":      "9",
+        "button_r":      "10",
+        "button_slleft":     "9",
+        "button_srleft":     "10",
+        "button_slright":     "9",
+        "button_srright":     "10",
+        "button_plus":  "6",
+        "button_minus": "4",
+        "button_lstick":     "7",
+        "button_rstick":     "8",
+        "button_home":   "5",
+        "button_screenshot": "15"
     }
 
     yuzuAxis = {
-        "lstick":    "joystick1",
-        "rstick":    "joystick2"
+        "lstick":   { 
+            "args": ["invert_y:+","invert_x:+", "offset_y:-0.000031", "offset_x:-0.000000"],
+            "axis_y": "1",
+            "axis_x": "0" 
+            },
+        "rstick":    "joystick2",
+        "button_zl": "4",
+        "button_zr": "5"
     }
 
     # Open Configuration File for Writing
